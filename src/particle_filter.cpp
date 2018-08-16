@@ -109,7 +109,7 @@ Map::single_landmark_s ParticleFilter::get_landmark_by_id(int id, const Map &map
             return map_landmarks.landmark_list[i];
         }
     }
-
+    //cout << "HERE ---------------------------\n";
     return map_landmarks.landmark_list[0];
 }
 
@@ -134,6 +134,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         for (unsigned int k = 0; k < map_landmarks.landmark_list.size(); k++) {
             double dist_to_landmark = dist(particles[i].x, particles[i].y,
                                            map_landmarks.landmark_list[k].x_f, map_landmarks.landmark_list[k].y_f);
+            //cout << "DIST: ------ " << sensor_range << "\n";
             if (dist_to_landmark <= sensor_range) {
                 LandmarkObs pred_landmark = {map_landmarks.landmark_list[k].id_i,
                                              map_landmarks.landmark_list[k].x_f,
@@ -188,8 +189,9 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    //std::random_device rd;
+    //std::mt19937 gen(rd());
+    default_random_engine gen;
     std::discrete_distribution<> d(weights.begin(), weights.end());
     std::vector<Particle> r_particles;
 
