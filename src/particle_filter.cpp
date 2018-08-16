@@ -95,6 +95,16 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
     }
 }
 
+Map::single_landmark_s get_landmark_by_id(int id, const Map &map_landmarks) {
+    for (unsigned int i; i < map_landmarks.landmark_list.size(); i++) {
+        if (map_landmarks.landmark_list[i].id_i == id) {
+            return map_landmarks.landmark_list[i];
+        }
+    }
+
+    return map_landmarks.landmark_list[0];
+}
+
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
 		const std::vector<LandmarkObs> &observations, const Map &map_landmarks) {
 	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
@@ -104,10 +114,65 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   Keep in mind that this transformation requires both rotation AND translation (but no scaling).
 	//   The following is a good resource for the theory:
 	//   https://www.willamette.edu/~gorr/classes/GeneralGraphics/Transforms/transforms2d.htm
-	//   and the following is a good resource for the actual equation to implement (look at equation 
+	//   and the following is a good resource for the actual equation to implement (look at equation
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+	for (int i = 0; i < num_particles; i++) {
+        std::vector<LandmarkObs> predicted_meas;
+        std::vector<LandmarkObs> transformed_observations;
+        double rotation_angle = particles[i].theta;
+
+        // find predicted measurements to landmarks for each particle
+        for (unsigned int k = 0; k < map_landmarks.landmark_list.size(); k++) {
+            double dist_to_landmark = dist(particles[i].x, particles[i].y,
+                                           map_landmarks.landmark_list[k].x_f, map_landmarks.landmark_list[i].y_f);
+            if (dist_to_landmark <= sensor_range) {
+                LandmarkObs pred_landmark = {map_landmarks.landmark_list[k].id_i,
+                                             map_landmarks.landmark_list[k].x_f,
+                                             map_landmarks.landmark_list[k].y_f};
+                predicted_meas.push_back(pred_landmark);
+            }
+        }
+
+        // convert observations into map's coordinate system
+        for (unsigned int o = 0; o < observations.size(); o++) {
+            double x_map = particles[i].x + (cos(rotation_angle)*observations[o].x) - (sin(rotation_angle)*observations[o].y);
+            double y_map = particles[i].y + (sin(rotation_angle)*observations[o].x) + (cos(rotation_angle)*observations[o].y);
+            LandmarkObs lob = {observations[i].id, x_map, y_map};
+            transformed_observations.push_back(lob);
+        }
+
+        dataAssociation(predicted_meas, transformed_observations);
+
+        // set landmark associations to particle
+        for (unsigned int n = 0; n < transformed_observations.size(); n++) {
+            particles[i].associations.push_back(transformed_observations[n].id);
+            particles[i].sense_x.push_back(transformed_observations[n].x);
+            particles[i].sense_y.push_back(transformed_observations[n].y);
+        }
+
+        // calculate each measurement's Multivariate-Gaussian probability density & compute the final particle weight
+        double weight = 1.0;
+        for (unsigned int n = 0; n < particles[i].associations.size(); n++) {
+            double mgpd;
+            double sig_x = std_landmark[0];
+            double sig_y = std_landmark[1];
+            double x_obs = particles[i].sense_x[n];
+            double y_obs = particles[i].sense_y[n];
+            Map::single_landmark_s landmark = get_landmark_by_id(particles[i].associations[n], map_landmarks);
+            double mu_x = landmark.x_f; //map_landmarks.landmark_list[transformed_observations[n].id - 1].x_f;
+            double mu_y = landmark.y_f; //map_landmarks.landmark_list[transformed_observations[n].id - 1].y_f;
+            double gauss_norm = (1.0 / (2.0 * M_PI * sig_x * sig_y));
+            double exponent= (pow((x_obs - mu_x), 2))/(2 * pow(sig_x, 2)) + (pow((y_obs - mu_y), 2))/(2 * pow(sig_y, 2));
+            mgpd = gauss_norm * exp(-exponent);
+            weight *= mgpd;
+        }
+
+        particles[i].weight = weight;
+        weights[i] = weight;
+	}
 }
+
 
 void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
