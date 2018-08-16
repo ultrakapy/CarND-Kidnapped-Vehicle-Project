@@ -25,7 +25,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
     default_random_engine gen;
-    num_particles = 42*42; // map size squared
+    num_particles = 50;//42*42; // map size squared
 
     // create normal distributions for x, y and theta.
     normal_distribution<double> dist_x(x, std[0]);
@@ -95,8 +95,8 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
     }
 }
 
-Map::single_landmark_s get_landmark_by_id(int id, const Map &map_landmarks) {
-    for (unsigned int i; i < map_landmarks.landmark_list.size(); i++) {
+Map::single_landmark_s ParticleFilter::get_landmark_by_id(int id, const Map &map_landmarks) {
+    for (unsigned int i = 0; i < map_landmarks.landmark_list.size(); i++) {
         if (map_landmarks.landmark_list[i].id_i == id) {
             return map_landmarks.landmark_list[i];
         }
@@ -125,7 +125,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         // find predicted measurements to landmarks for each particle
         for (unsigned int k = 0; k < map_landmarks.landmark_list.size(); k++) {
             double dist_to_landmark = dist(particles[i].x, particles[i].y,
-                                           map_landmarks.landmark_list[k].x_f, map_landmarks.landmark_list[i].y_f);
+                                           map_landmarks.landmark_list[k].x_f, map_landmarks.landmark_list[k].y_f);
             if (dist_to_landmark <= sensor_range) {
                 LandmarkObs pred_landmark = {map_landmarks.landmark_list[k].id_i,
                                              map_landmarks.landmark_list[k].x_f,
@@ -163,13 +163,14 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             double mu_x = landmark.x_f; //map_landmarks.landmark_list[transformed_observations[n].id - 1].x_f;
             double mu_y = landmark.y_f; //map_landmarks.landmark_list[transformed_observations[n].id - 1].y_f;
             double gauss_norm = (1.0 / (2.0 * M_PI * sig_x * sig_y));
-            double exponent= (pow((x_obs - mu_x), 2))/(2 * pow(sig_x, 2)) + (pow((y_obs - mu_y), 2))/(2 * pow(sig_y, 2));
+            double exponent = (pow((x_obs - mu_x), 2))/(2 * pow(sig_x, 2)) + (pow((y_obs - mu_y), 2))/(2 * pow(sig_y, 2));
             mgpd = gauss_norm * exp(-exponent);
             weight *= mgpd;
         }
 
         particles[i].weight = weight;
         weights[i] = weight;
+        //cout << "HERE " << getAssociations(particles[i]) << "\n";
 	}
 }
 
@@ -178,7 +179,7 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-
+    cout << "RESAMPLE" << "\n";
 }
 
 void ParticleFilter::SetAssociations(Particle& particle, const std::vector<int>& associations,
