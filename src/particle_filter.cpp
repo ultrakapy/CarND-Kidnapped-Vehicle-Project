@@ -25,7 +25,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
     default_random_engine gen;
-    num_particles = 50;//42*42; // map size squared
+    num_particles = 10; //42*42; // map size squared
 
     // create normal distributions for x, y and theta.
     normal_distribution<double> dist_x(x, std[0]);
@@ -179,7 +179,16 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-    cout << "RESAMPLE" << "\n";
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::discrete_distribution<> d(weights.begin(), weights.end());
+    std::vector<Particle> r_particles;
+
+    for (int i = 0; i < num_particles; i++) {
+        r_particles.push_back(particles[d(gen)]);
+    }
+
+    particles = r_particles;
 }
 
 void ParticleFilter::SetAssociations(Particle& particle, const std::vector<int>& associations,
