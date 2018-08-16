@@ -25,7 +25,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
     default_random_engine gen;
-    num_particles = 10; //42*42; // map size squared
+    num_particles = 100; //42*42; // map size squared
 
     // create normal distributions for x, y and theta.
     normal_distribution<double> dist_x(x, std[0]);
@@ -59,9 +59,17 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
         double x_0 = particles[i].x;
         double y_0 = particles[i].y;
         double theta_0 = particles[i].theta;
-        double new_x = x_0 + ((velocity / yaw_rate) * (sin(theta_0 + (yaw_rate * delta_t)) - sin(theta_0)));
-        double new_y = y_0 + ((velocity / yaw_rate) * (cos(theta_0) - cos(theta_0 + (yaw_rate * delta_t))));
-        double new_theta = theta_0 + (yaw_rate * delta_t);
+        double new_x, new_y, new_theta;
+
+        if (yaw_rate == 0) {
+            new_x = x_0 + velocity*delta_t*cos(theta_0);
+            new_y = y_0 + velocity*delta_t*sin(theta_0);
+            new_theta = theta_0;
+        } else {
+            new_x = x_0 + ((velocity / yaw_rate) * (sin(theta_0 + (yaw_rate * delta_t)) - sin(theta_0)));
+            new_y = y_0 + ((velocity / yaw_rate) * (cos(theta_0) - cos(theta_0 + (yaw_rate * delta_t))));
+            new_theta = theta_0 + (yaw_rate * delta_t);
+        }
 
         normal_distribution<double> dist_new_x(new_x, std_pos[0]);
         particles[i].x = dist_new_x(gen);
@@ -139,6 +147,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             double x_map = particles[i].x + (cos(rotation_angle)*observations[o].x) - (sin(rotation_angle)*observations[o].y);
             double y_map = particles[i].y + (sin(rotation_angle)*observations[o].x) + (cos(rotation_angle)*observations[o].y);
             LandmarkObs lob = {observations[i].id, x_map, y_map};
+            //cout << "LOB: " << lob.id << ", " << lob.x << ", " << lob.y << "\n";
             transformed_observations.push_back(lob);
         }
 
