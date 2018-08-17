@@ -155,6 +155,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         dataAssociation(predicted_meas, transformed_observations);
 
         // set landmark associations to particle
+        particles[i].associations.clear();
+        particles[i].sense_x.clear();
+        particles[i].sense_y.clear();
         for (unsigned int n = 0; n < transformed_observations.size(); n++) {
             particles[i].associations.push_back(transformed_observations[n].id);
             particles[i].sense_x.push_back(transformed_observations[n].x);
