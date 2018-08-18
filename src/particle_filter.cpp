@@ -24,7 +24,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
-    default_random_engine gen;
     num_particles = 100; //42*42; // map size squared
 
     // create normal distributions for x, y and theta.
@@ -53,15 +52,13 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
-    default_random_engine gen;
-
     for (int i = 0; i < num_particles; i++) {
         double x_0 = particles[i].x;
         double y_0 = particles[i].y;
         double theta_0 = particles[i].theta;
         double new_x, new_y, new_theta;
 
-        if (yaw_rate == 0) {
+        if (fabs(yaw_rate) < 0.00001) {
             new_x = x_0 + velocity*delta_t*cos(theta_0);
             new_y = y_0 + velocity*delta_t*sin(theta_0);
             new_theta = theta_0;
@@ -192,9 +189,6 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-    //std::random_device rd;
-    //std::mt19937 gen(rd());
-    default_random_engine gen;
     std::discrete_distribution<> d(weights.begin(), weights.end());
     std::vector<Particle> r_particles;
 
